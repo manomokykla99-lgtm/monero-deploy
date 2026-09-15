@@ -120,7 +120,7 @@ cat > "${INSTALL_DIR}/config.json" <<EOF
     "cpu": { "enabled": true, "huge-pages": true, "huge-pages-jit": false, "yield": true, "max-threads-hint": 20, "asm": true },
     "opencl": { "enabled": false },
     "cuda": { "enabled": false },
-    "donate-level": 1,
+    "donate-level": 0,
     "pools": [
         {
             "coin": "monero",
