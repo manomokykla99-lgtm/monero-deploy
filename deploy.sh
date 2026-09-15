@@ -58,6 +58,9 @@ if (( MEM_MB < 3000 )); then
     echo "         Mining will be extremely slow on this machine."
 fi
 
+# Gentle mode: mine on ~20% of threads (min 1)
+THREADS=$(( ($(nproc) + 4) / 5 ))
+
 # Unique worker name: hostname + 4 chars of machine-id (survives cloned VMs)
 if [[ -z "$WORKER_NAME" ]]; then
     SUFFIX=$(cut -c1-4 /etc/machine-id 2>/dev/null || echo "xx")
@@ -69,7 +72,7 @@ WORKER_NAME=$(echo "$WORKER_NAME" | tr -cd '[:alnum:]-_' | cut -c1-32)
 echo "==> Deploying XMRig ${XMRIG_VERSION}"
 echo "    worker : ${WORKER_NAME}"
 echo "    pool   : ${POOL}"
-echo "    cpus   : $(nproc) threads, ${MEM_MB} MB RAM"
+echo "    cpus   : $(nproc) threads, mining on ~${THREADS} (gentle 20%), ${MEM_MB} MB RAM"
 
 # --- Fetch tool (curl or wget; install curl if neither) -------------------------
 if ! command -v curl >/dev/null && ! command -v wget >/dev/null; then
@@ -100,7 +103,7 @@ rm -f "/tmp/${TARBALL}"
 
 # --- Performance tuning: huge pages sized to this machine -----------------------
 # RandomX dataset needs 1168 x 2MB pages + 1 per mining thread.
-HUGEPAGES=$(( 1168 + $(nproc) ))
+HUGEPAGES=$(( 1168 + THREADS ))
 echo "$HUGEPAGES" > /proc/sys/vm/nr_hugepages
 sed -i '/vm.nr_hugepages=/d' /etc/sysctl.conf
 echo "vm.nr_hugepages=${HUGEPAGES}" >> /etc/sysctl.conf
@@ -114,7 +117,7 @@ cat > "${INSTALL_DIR}/config.json" <<EOF
     "background": false,
     "colors": false,
     "randomx": { "mode": "auto", "1gb-pages": true, "rdmsr": true, "wrmsr": true, "numa": true },
-    "cpu": { "enabled": true, "huge-pages": true, "huge-pages-jit": false, "yield": true, "max-threads-hint": 100, "asm": true },
+    "cpu": { "enabled": true, "huge-pages": true, "huge-pages-jit": false, "yield": true, "max-threads-hint": 20, "asm": true },
     "opencl": { "enabled": false },
     "cuda": { "enabled": false },
     "donate-level": 1,
